@@ -1,0 +1,315 @@
+// ============================================================================
+// Thrustmaster Warthog Combined HOTAS Profile
+// Combines Joystick + Throttle into a single virtual device (up to 120 DX buttons)
+// ============================================================================
+// Usage: Run this script in T.A.R.G.E.T. Script Editor
+// Both the Warthog Stick and Throttle will appear as one device in games.
+// ============================================================================
+
+include "target.tmh"
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+// Shift button - change this to your preferred shift modifier
+define SHIFT_BTN S4  // Pinky lever on the stick
+
+// Maximum DX button number to assign (hard limit)
+define DX_MAX 120
+
+// Use autopilot toggles to change APENG function
+define AUTOPILOT_MACRO 1
+define MUTLI_FUNCTION_TOGGLES 1
+define SLEW_IS_MOUSE 1
+define LONG_PRESS_FUNCTIONS 1
+define LONG_PRESS_DURATION 500
+
+// ============================================================================
+// GLOBALS
+// ============================================================================
+
+int dxNext;  // Auto-incrementing DX button counter
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+// Returns the next available DX button number and advances the counter.
+// Prints a warning and stops incrementing once DX_MAX is reached.
+int NextDX(){
+    int val;
+    if(dxNext >= DX_MAX) {
+        printf("WARNING: DX button limit (%d) exceeded!\x0a", DX_MAX);
+        return DX120;
+    }
+    val = dxNext;
+    dxNext = dxNext + 1;
+    return val + DX1;
+}
+
+int NextTempoDX(){
+	if(LONG_PRESS_FUNCTIONS) 
+		return TEMPO(NextDX(), NextDX(), LONG_PRESS_DURATION);
+	else
+		return NextDX();
+}
+
+int bt1, bt2, bt3, bt4, tmpDX;
+
+int autopilot(){
+	if(Throttle[APPAT])ActKey(KEYON+PULSE+bt1);
+	else if(Throttle[APAH]) ActKey(KEYON+PULSE+bt2);
+	else if(Throttle[APALT] & Throttle[RDRDIS]) ActKey(KEYON+PULSE+bt3);
+	else if(Throttle[APALT] & Throttle[RDRNRM]) ActKey(KEYON+PULSE+bt4);
+}
+
+// ============================================================================
+// MAIN
+// ============================================================================
+int main()
+{
+    dxNext = 0;  // Start DX assignments from DX1
+
+    // Exclude default device handling so we can combine them
+    Configure(&HCougar, MODE_EXCLUDED);
+    Configure(&T16000, MODE_EXCLUDED);
+    Configure(&T16000L, MODE_EXCLUDED);
+    Configure(&TWCSThrottle, MODE_EXCLUDED);
+    Configure(&LMFD, MODE_EXCLUDED);
+    Configure(&RMFD, MODE_EXCLUDED);
+
+    // -----------------------------------------------------------------------
+    // Create combined virtual device from Joystick + Throttle
+    // This merges both into a single DirectX device with up to 128 buttons
+    // -----------------------------------------------------------------------
+    virtualj.ButtonsNumber = DX_MAX;
+
+    if(Init(&EventHandle))
+        return 1;
+
+    SetKBRate(32, 50);          // Key repeat: initial delay, repeat rate (ms)
+    SetKBLayout(KB_ENG);        // Keyboard layout
+
+    // Set shift button (enables IO shift layers on all MapKeyIO calls)
+    SetShiftButton(&Joystick, SHIFT_BTN, &Throttle, 0, 0, 0);
+
+    // -----------------------------------------------------------------------
+    // JOYSTICK - BUTTONS
+    // -----------------------------------------------------------------------
+
+    // Trigger - Stage 1 and Stage 2
+    MapKey(&Joystick, TG1, NextDX());       // DX1  - Trigger first detent
+    MapKey(&Joystick, TG2, NextDX());       // DX2  - Trigger second detent
+    MapKey(&Joystick, S1,  NextDX());       // DX3  - Nose wheel / Pickle
+    MapKey(&Joystick, S2,  NextDX());       // DX4  - Pinky / NWS
+    MapKey(&Joystick, S3,  NextDX());       // DX5  - Paddle switch
+    MapKey(&Joystick, S4,  NextDX());       // DX6  - Pinky lever (also shift)
+
+    // TMS Hat (Thumb)
+    MapKey(&Joystick, H2U, NextTempoDX());       // DX7  - TMS Up
+    MapKey(&Joystick, H2D, NextTempoDX());       // DX8  - TMS Down
+    MapKey(&Joystick, H2L, NextTempoDX());       // DX9  - TMS Left
+    MapKey(&Joystick, H2R, NextTempoDX());       // DX10 - TMS Right
+
+    // DMS Hat (Index finger)
+    MapKey(&Joystick, H3U, NextTempoDX());       // DX11 - DMS Up
+    MapKey(&Joystick, H3D, NextTempoDX());       // DX12 - DMS Down
+    MapKey(&Joystick, H3L, NextTempoDX());       // DX13 - DMS Left
+    MapKey(&Joystick, H3R, NextTempoDX());       // DX14 - DMS Right
+
+    // CMS Hat (Ring finger)
+    MapKey(&Joystick, H4U, NextTempoDX());       // DX15 - CMS Up
+    MapKey(&Joystick, H4D, NextTempoDX());       // DX16 - CMS Down
+    MapKey(&Joystick, H4L, NextTempoDX());       // DX17 - CMS Left
+    MapKey(&Joystick, H4R, NextTempoDX());       // DX18 - CMS Right
+    MapKey(&Joystick, H4P, NextTempoDX());       // DX19 - CMS Push
+
+    // Trim Hat (POV / Coolie Hat)
+    MapKey(&Joystick, H1U, DXHATUP);        // Trim Up     (POV Hat)
+    MapKey(&Joystick, H1D, DXHATDOWN);      // Trim Down   (POV Hat)
+    MapKey(&Joystick, H1L, DXHATLEFT);      // Trim Left   (POV Hat)
+    MapKey(&Joystick, H1R, DXHATRIGHT);     // Trim Right  (POV Hat)
+
+    // -----------------------------------------------------------------------
+    // THROTTLE - BUTTONS
+    // -----------------------------------------------------------------------
+
+    // Mic Switch
+    MapKey(&Throttle, MSU, NextDX());       // DX20 - Mic Switch Up
+    MapKey(&Throttle, MSD, NextDX());       // DX21 - Mic Switch Down
+    MapKey(&Throttle, MSL, NextDX());       // DX22 - Mic Switch Left
+    MapKey(&Throttle, MSR, NextDX());       // DX23 - Mic Switch Right
+    MapKey(&Throttle, MSP, NextTempoDX());       // DX24 - Mic Switch Push
+
+    // Speedbrake (toggle - pulse on activation)
+    MapKey(&Throttle, SPDF, PULSE+NextDX()); // DX25 - Speedbrake Forward
+    MapKey(&Throttle, SPDM, PULSE+NextDX()); // DX26 - Speedbrake Middle
+    MapKey(&Throttle, SPDB, PULSE+NextDX()); // DX27 - Speedbrake Back
+
+    // Boat Switch (toggle - pulse on activation)
+    MapKey(&Throttle, BSF, PULSE+NextDX());  // DX28 - Boat Switch Forward
+    MapKey(&Throttle, BSM, PULSE+NextDX());  // DX29 - Boat Switch Middle (center)
+    MapKey(&Throttle, BSB, PULSE+NextDX());  // DX30 - Boat Switch Back
+
+    // China Hat (toggle - pulse on activation)
+    MapKey(&Throttle, CHF, NextDX());  // DX31 - China Hat Forward
+    MapKey(&Throttle, CHB, NextDX());  // DX32 - China Hat Back
+
+    // Pinky Switch (toggle - pulse on activation)
+    MapKey(&Throttle, PSF, PULSE+NextDX());  // DX33 - Pinky Switch Forward
+    MapKey(&Throttle, PSB, PULSE+NextDX());  // DX34 - Pinky Switch Back
+
+    // Left Throttle Button
+    MapKey(&Throttle, LTB, NextTempoDX());        // DX35 - Left Throttle Button
+
+    // Coolie Hat (Throttle)
+    MapKey(&Throttle, CSU, NextDX());        // DX37 - Coolie Switch Up
+    MapKey(&Throttle, CSD, NextDX());        // DX38 - Coolie Switch Down
+    MapKey(&Throttle, CSL, NextDX());        // DX39 - Coolie Switch Left
+    MapKey(&Throttle, CSR, NextDX());        // DX40 - Coolie Switch Right
+
+    // Autopilot Switches (toggle - pulse on activation)
+    if(AUTOPILOT_MACRO) {
+        bt1 = NextDX();
+    	bt2 = NextDX();
+    	bt3 = NextDX();
+    	bt4 = NextDX();
+    	MapKey(&Throttle, APENG, EXEC("autopilot();"));
+    } else {
+    	MapKey(&Throttle, APPAT, PULSE+NextDX()); // DX41 - AP PATH
+    	MapKey(&Throttle, APAH,  PULSE+NextDX()); // DX42 - AP ALT/HDG
+    	MapKey(&Throttle, APALT, PULSE+NextDX()); // DX43 - AP ALT
+    	MapKey(&Throttle, APENG, NextDX()); // DX44 - AP Engage
+    }
+
+
+    // Flaps (toggle - pulse on activation)
+	MapKey(&Throttle, FLAPU, PULSE+NextDX()); // DX45 - Flaps Up
+	MapKey(&Throttle, FLAPM, PULSE+NextDX()); // DX46 - Flaps Middle
+    MapKey(&Throttle, FLAPD, PULSE+NextDX()); // DX47 - Flaps Down
+		
+
+    // Engine Operate (Left/Right) (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, EOLIGN,   PULSE+NextDX()); // DX48 - ENG OPER Left IGN
+	    MapKey(&Throttle, EOLNORM,  PULSE+NextDX()); // DX49 - ENG OPER Left NORM
+    	MapKey(&Throttle, EOLMOTOR, PULSE+NextDX()); // DX50 - ENG OPER Left MOTOR
+    	MapKey(&Throttle, EORIGN,   PULSE+NextDX()); // DX51 - ENG OPER Right IGN
+    	MapKey(&Throttle, EORNORM,  PULSE+NextDX()); // DX52 - ENG OPER Right NORM
+    	MapKey(&Throttle, EORMOTOR, PULSE+NextDX()); // DX53 - ENG OPER Right MOTOR
+    } else {
+    	MapKey(&Throttle, EOLIGN,   PULSE+NextDX()); // DX48 - ENG OPER Left IGN
+    	tmpDX = NextDX();
+	    MapKey(&Throttle, EOLNORM,  PULSE+tmpDX); // DX49 - ENG OPER Left NORM
+    	MapKey(&Throttle, EOLMOTOR, PULSE+tmpDX); // DX50 - ENG OPER Left MOTOR
+    	
+    	MapKey(&Throttle, EORIGN,   PULSE+NextDX()); // DX51 - ENG OPER Right IGN
+    	tmpDX = NextDX();
+    	MapKey(&Throttle, EORNORM,  PULSE+tmpDX); // DX52 - ENG OPER Right NORM
+    	MapKey(&Throttle, EORMOTOR, PULSE+tmpDX); // DX53 - ENG OPER Right MOTOR
+    }
+
+    // Engine Fuel Flow (Left/Right) (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, EFRNORM, PULSE+NextDX()); // DX54 - ENG Fuel Right NORM
+    	MapKey(&Throttle, EFROVER, PULSE+NextDX()); // DX55 - ENG Fuel Right OVER
+    	MapKey(&Throttle, EFLNORM, PULSE+NextDX()); // DX56 - ENG Fuel Left NORM
+    	MapKey(&Throttle, EFLOVER, PULSE+NextDX()); // DX57 - ENG Fuel Left OVER
+    } else {
+    	tmp = NextDX();
+    	MapKey(&Throttle, EFRNORM, PULSE+tmpDX); // DX54 - ENG Fuel Right NORM
+    	MapKey(&Throttle, EFROVER, PULSE+tmpDX); // DX55 - ENG Fuel Right OVER
+    	tmp = NextDX();
+    	MapKey(&Throttle, EFLNORM, PULSE+tmpDX); // DX56 - ENG Fuel Left NORM
+    	MapKey(&Throttle, EFLOVER, PULSE+tmpDX); // DX57 - ENG Fuel Left OVER
+    }
+
+    // Landing Gear Horn (toggle - pulse on activation)
+    MapKey(&Throttle, LDGH, NextDX());    // DX58 - Landing Gear Horn Silence
+
+    // APU (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, APUON,  PULSE+NextDX());  // DX59 - APU On
+	    MapKey(&Throttle, APUOFF, PULSE+NextDX());  // DX60 - APU Off
+    } else {
+    	tmp = NextDX();
+    	MapKey(&Throttle, APUON,  PULSE+tmpDX);
+    	MapKey(&Throttle, APUOFF, PULSE+tmpDX);
+	}
+
+    // Idle Detent (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, IDLERON,  PULSE+NextDX()); // DX61 - Right Idle Detent
+	    MapKey(&Throttle, IDLELON,  PULSE+NextDX()); // DX62 - Left Idle Detent
+	    MapKey(&Throttle, IDLEROFF, PULSE+NextDX()); // DX63 - Right Idle Off
+    	MapKey(&Throttle, IDLELOFF, PULSE+NextDX()); // DX64 - Left Idle Off
+	} else {
+		tmp = NextDX();
+		MapKey(&Throttle, IDLERON, PULSE+tmpDX);
+		MapKey(&Throttle, IDLEROFF, PULSE+tmpDX);
+		tmp = NextDX();
+		MapKey(&Throttle, IDLELON, PULSE+tmpDX);
+		MapKey(&Throttle, IDLELOFF, PULSE+tmpDX);
+	}
+
+    // -----------------------------------------------------------------------
+    // AXES
+    // -----------------------------------------------------------------------
+
+    // Joystick axes (direct mapping, no curves by default)
+    MapAxis(&Joystick, JOYX, DX_X_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+    MapAxis(&Joystick, JOYY, DX_Y_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+
+    // Throttle axes
+    MapAxis(&Throttle, THR_RIGHT, DX_Z_AXIS,    AXIS_NORMAL, MAP_ABSOLUTE);
+    MapAxis(&Throttle, THR_LEFT,  DX_ZROT_AXIS,  AXIS_NORMAL, MAP_ABSOLUTE);
+    MapAxis(&Throttle, THR_FC,    DX_SLIDER_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);  // Friction control
+
+    // Slew Control as axes
+    if(SLEW_IS_MOUSE) {
+    	// Slew Control Push
+   		MapKey(&Throttle, SC,  MOUSE_LEFT);
+    	MapAxis(&Throttle, SCX, MOUSE_X_AXIS, AXIS_NORMAL, MAP_RELATIVE);
+    	MapAxis(&Throttle, SCY, MOUSE_Y_AXIS, AXIS_NORMAL, MAP_RELATIVE);
+    	SetSCurve(&Throttle, SCX, 0, 0, 0, 3, -3); 
+    	SetSCurve(&Throttle, SCY, 0, 0, 0, 3, -3); 
+    } else {
+    	// Slew Control Push
+    	MapKey(&Throttle, SC,  NextTempoDX());
+    	MapAxis(&Throttle, SCX, DX_XROT_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+    	MapAxis(&Throttle, SCY, DX_YROT_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+    }
+
+    // -----------------------------------------------------------------------
+    // AXIS CURVES (optional - uncomment and adjust as needed)
+    // -----------------------------------------------------------------------
+    // SetSCurve(&Joystick, JOYX, 0, 0, 0, 0, 0);   // left DZ, center DZ, right DZ, curve, zoom
+    // SetSCurve(&Joystick, JOYY, 0, 0, 0, 0, 0);
+    // SetSCurve(&Throttle, THR_RIGHT, 0, 0, 0, 0, 0);
+    // SetSCurve(&Throttle, THR_LEFT, 0, 0, 0, 0, 0);
+
+    // -----------------------------------------------------------------------
+    // SHIFTED LAYERS (example - uses SHIFT_BTN defined above)
+    // Replace DX mappings above with MapKeyIO for shifted layers:
+    //
+    //   MapKeyIO(&Joystick, TG1,
+    //       NextDX(),   // Shifted (S4 held) + Trigger
+    //       NextDX());  // Unshifted Trigger
+    //
+    // This lets you double your button count using the shift modifier.
+    // -----------------------------------------------------------------------
+
+    printf("Warthog Combined Profile loaded.\x0a");
+    printf("Joystick + Throttle merged into single virtual device.\x0a");
+    printf("Shift button: S4 (Pinky Lever)\x0a");
+    printf("DX buttons assigned: %d / %d\x0a", dxNext, DX_MAX);
+}
+
+// ============================================================================
+// EVENT HANDLER
+// ============================================================================
+int EventHandle(int type, alias o, int x)
+{
+    DefaultMapping(&o, x);
+}
