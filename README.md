@@ -22,7 +22,6 @@ What this script does not do:
 * Assign game specific keyboard functions.
 * Sync LED state.
 * Require multiple files or external libraries.
-* Static button assignments.
 * Anything too clever to make it difficult to customize.
 
 ## Installation
@@ -40,13 +39,12 @@ You can easily configure the script behavior at the top of the script using the 
 |MULTI_FUNCTION_TOGGLES| When 1, every toggle sends a different DX button for each state of the toggle (e.g. DX40 in when flipped on, and DX41 when flipped off). This is recommended if for games that support separate on/off control bindings. When 0, both states send the same DX code.|
 |SLEW_IS_MOUSE| When 1, the slew works as a mouse axis, and the slew click as a mouse Left Click. Otherwise works as an additional two axis and DX button.|
 |LONG_PRESS_FUNCTIONS| When 1, most buttons outside of the Triggers, Boat Switch, Speed Break, and POVHat send a different DX button on long press.|
+|PinkyMacro| When 1, changes the DX assignments for the LTB depending on the state of the pinky switch, turning it into 3 buttons, or 6 with long press.|
 
-An important note is that DX button assignments are dynamic, and may change if you change configuration options. Make sure to finalize your customizations before binding controls in your game.
+You can customize DX button assignments in initDXMap(). Note that adding, removing, or rearranging calls to NextDX() here could shift all following DX button assignments. Make sure to finalize your customizations before binding controls in your game.
 
 ### Advanced Configuration
-You may wish for certain toggles to send separate DX buttons for each states, and others to simply repeat the same state in up/down position. Simply scan through the code for the matching MapKey assignents, and change the surrounding `if(MULTI_FUNCTION_TOGGLES){` block to `if(0){` or `if(1){` to enable or disable multifunction toggles for that specific swtich. 
-
-To turn off long press functions for a specific button, replace the NextTempoDX() function call in the appropraite MapKey assignment with NextDX().
+You may wish for certain toggles to send separate DX buttons for each state and others to simply repeat the same state in up/down position. Simply scan through the code for the matching MapKey assignents, and change the surrounding `if(MULTI_FUNCTION_TOGGLES){` block to `if(0){` or `if(1){` to enable or disable multifunction toggles for that specific swtich.
 
 ## Autopilot Macro
 The autopilot macro is designed for the following autopilot modes. Path, Altitude/Heading, Altitude bank right, Altitude bank left. The APENG will send a different DX button for each of the following states.
