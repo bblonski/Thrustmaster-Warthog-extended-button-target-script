@@ -1,5 +1,651 @@
 // ============================================================================
 // Thrustmaster Warthog Combined HOTAS Profile
+// Combines Joystick + Throttle into a single virtual device (up to 128 DX buttons)
+// ============================================================================
+// Usage: Run this script in T.A.R.G.E.T. Script Editor
+// Both the Warthog Stick and Throttle will appear as one device in games.
+// ============================================================================
+
+include "target.tmh"
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+// Shift button - change this to your preferred shift modifier
+define SHIFT_BTN					S4  // Pinky lever on the stick
+
+// Maximum DX button number to assign (hard limit)
+define DX_MAX						120 //DO NOT EXCEED 120
+
+// Use autopilot toggles to change APENG function
+
+define MUTLI_FUNCTION_TOGGLES		1
+define SLEW_IS_MOUSE				1
+define PINKY_MACRO					1
+define AUTOPILOT_MACRO				1
+define SHIFT_BUTTONS 				1
+
+define BOAT_SWITCH_MACRO			1
+define BOAT_SWITCH_MS 				1
+define BOAT_SWITCH_CH 				1
+
+define LONG_PRESS_FUNCTIONS 		1
+define LONG_PRESS_DURATION 			500
+define LONG_PRESS_MS 				1
+define LONG_PRESS_CH				1 
+define LONG_PRESS_SPDB 				1
+define LONG_PRESS_HAT2				1
+define LONG_PRESS_HAT3				1
+define LONG_PRESS_HAT4				1
+define LONG_PRESS_LDGH				1
+define LONG_PRESS_APENG				1
+
+
+// ============================================================================
+// GLOBALS
+// ============================================================================
+
+int dxNext;  // Auto-incrementing DX button counter
+
+struct DXReMap {
+	//-----------------------------
+	// joystick
+	//-----------------------------
+	
+	// buttons
+	int tg1, s1, s2, s3, s4, tg2, tg1_shift, tg2_shift, s1_shift, s2_shift,
+	// hats
+	h1d, h1r, h1u, h1l, 
+	h2d, h2r, h2u, h2l, h2d_long, h2r_long, h2u_long, h2l_long,
+	h3d, h3r, h3u, h3l, h3d_long, h3r_long, h3u_long, h3l_long,	
+	h4d, h4r, h4u, h4l, h4p, h4d_long, h4r_long, h4u_long, h4l_long, h4p_long,
+
+	//-----------------------
+	// throttle
+	//-----------------------
+	
+	// mic swithc
+	msd, msr, msu, msl, msp, msd_long, msr_long, msu_long, msl_long, msp_long, msd_bsf, msr_bsf, msu_bsf, msl_bsf, msd_bsb, msr_bsb, msu_bsb, msl_bsb,
+	// spead break
+	spdf, spdm, spdb, spdb_long,
+	// boat switch
+	bsf, bsm, bsb,
+	// china hat
+	chf, chm, chb, chf_long, chb_long, chf_bsf, chb_bsf, chf_bsb, chb_bsb, 
+	// coolie switch
+	csd, csr, csu, csl, csd_long, csr_long, csu_long, csl_long,
+	// pinky switch
+	psf, psm, psb,
+	// buttons
+	ltb, sc, apeng, ldgh, ltb_long, sc_long, apeng_long, ldgh_long,
+	// flaps
+	flapu, flapm, flapd,
+	// LASTE
+	appat, apah, apalt,
+	// RDR altm
+	rdrnrm,	rdrdis,
+	// EAC
+	eacon, eacoff,
+	// APU
+	apuon, apuoff,
+	// engine operation
+	eolign,	eolnorm, eolmotor, eorign, eornorm, eormotor,
+    // engine flow
+    eflnorm, eflover, efrnorm, efrover,
+    // throttle idle
+    idleron, idleroff, idlelon, idleloff,
+	
+	//-----------------
+	// macros
+	//-----------------
+	
+	// autopilot
+	apeng_pat, apeng_heading, apeng_right, apeng_left,
+	// pinky switch
+	ltb_psf, ltb_psm, ltb_psb, ltb_psf_long, ltb_psm_long, ltb_psb_long;
+}
+
+DXReMap dxMap;
+
+
+int initDXMap() {
+	//------------------
+	// Joystick
+	//------------------
+	dxMap.tg1 = NextDX();
+	dxMap.s1 = NextDX();
+	dxMap.s2 = NextDX();
+	dxMap.s3 = NextDX();
+	dxMap.s4 = NextDX();
+	dxMap.tg2 = NextDX();
+	
+	dxMap.h1d = DXHATDOWN;
+	dxMap.h1r = DXHATRIGHT;
+	dxMap.h1u = DXHATUP;
+	dxMap.h1l = DXHATLEFT;
+		
+	dxMap.h2d = NextDX();
+	dxMap.h2r = NextDX();
+	dxMap.h2u = NextDX();
+	dxMap.h2l = NextDX();
+	
+	dxMap.h3d = NextDX();
+	dxMap.h3r = NextDX();
+	dxMap.h3u = NextDX();
+	dxMap.h3l = NextDX();
+	
+	dxMap.h4d = NextDX();
+	dxMap.h4r = NextDX();
+	dxMap.h4u = NextDX();
+	dxMap.h4l = NextDX();
+	dxMap.h4p = NextDX();
+	
+	dxMap.h2d_long = NextDX();
+	dxMap.h2r_long = NextDX();
+	dxMap.h2u_long = NextDX();
+	dxMap.h2l_long = NextDX();
+	
+	dxMap.h3d_long = NextDX();
+	dxMap.h3r_long = NextDX();
+	dxMap.h3u_long = NextDX();
+	dxMap.h3l_long = NextDX();
+	
+	dxMap.h4d_long = NextDX();
+	dxMap.h4r_long = NextDX();
+	dxMap.h4u_long = NextDX();
+	dxMap.h4l_long = NextDX();
+	dxMap.h4p_long = NextDX();
+
+	//------------------
+	// Throttle
+	//------------------
+	dxMap.msd = NextDX();
+	dxMap.msr = NextDX();
+	dxMap.msu = NextDX();
+	dxMap.msl = NextDX();
+	dxMap.msp = NextDX();
+	
+	dxMap.spdf = PULSE|NextDX();
+	dxMap.spdm = PULSE|NextDX();
+	dxMap.spdb = NextDX();
+	dxMap.spdb_long = NextDX();
+	
+	dxMap.bsf = PULSE|NextDX();
+	dxMap.bsm = PULSE|NextDX();
+	dxMap.bsb = PULSE|NextDX();
+	
+	dxMap.chf = NextDX();
+	dxMap.chm = PULSE|NextDX();
+	dxMap.chb = NextDX();
+    dxMap.chf_long = NextDX();
+    dxMap.chb_long = NextDX();
+	
+	dxMap.csd = NextDX();
+	dxMap.csr = NextDX();
+	dxMap.csu = NextDX();
+	dxMap.csl = NextDX();
+	
+	dxMap.psf = NextDX();
+	dxMap.psm = PULSE|NextDX();
+	dxMap.psb = NextDX();
+	
+	dxMap.ltb = NextDX();
+	dxMap.ltb_long = NextDX();
+	
+	dxMap.sc = NextDX();
+    dxMap.sc_long = NextDX();
+	
+	dxMap.flapu = NextDX();
+	dxMap.flapm = PULSE|NextDX();
+	dxMap.flapd = NextDX();
+	
+	dxMap.appat = PULSE|NextDX();
+	dxMap.apah = PULSE|NextDX();
+	dxMap.apalt = PULSE|NextDX();
+	
+	dxMap.rdrnrm = PULSE|NextDX();
+	dxMap.rdrdis = PULSE|NextDX();
+	
+	dxMap.eacon = PULSE|NextDX();
+	dxMap.eacoff = PULSE|NextDX();
+	
+	dxMap.apuon = PULSE|NextDX();
+	dxMap.apuoff = PULSE|NextDX();
+	
+	dxMap.eolign = NextDX();
+	dxMap.eolnorm = PULSE|NextDX();
+    dxMap.eolmotor = PULSE|NextDX();
+    
+    dxMap.eorign = NextDX();
+    dxMap.eornorm = PULSE|NextDX();
+    dxMap.eormotor = PULSE|NextDX();
+    
+    dxMap.eflnorm = PULSE|NextDX();
+    dxMap.eflover = PULSE|NextDX();
+    
+    dxMap.efrnorm = PULSE|NextDX();
+    dxMap.efrover = PULSE|NextDX();
+    
+    dxMap.idleron = PULSE|NextDX();
+	dxMap.idleroff = PULSE|NextDX();
+	
+	dxMap.idlelon = PULSE|NextDX();
+    dxMap.idleloff = PULSE|NextDX();
+    
+    dxMap.msd_long = NextDX();
+    dxMap.msr_long = NextDX();
+    dxMap.msu_long = NextDX();
+    dxMap.msl_long = NextDX();
+    dxMap.msp_long = NextDX();
+    
+    dxMap.csd_long = NextDX();
+    dxMap.csr_long = NextDX();
+    dxMap.csu_long = NextDX();
+	dxMap.csl_long = NextDX();
+    
+	//--------------------------------
+	// macros
+	//--------------------------------
+	dxMap.apeng_pat = KEYON|PULSE|NextDX();
+	dxMap.apeng_heading = KEYON|PULSE|NextDX();
+	dxMap.apeng_right = KEYON|PULSE|NextDX();
+	dxMap.apeng_left = KEYON|PULSE|NextDX();
+	
+	dxMap.ltb_psf = NextDX();
+	dxMap.ltb_psf_long = NextDX();
+	
+	dxMap.ltb_psm = dxMap.ltb;
+	dxMap.ltb_psm_long = dxMap.ltb_long;
+	
+	dxMap.ltb_psb = NextDX();
+	dxMap.ltb_psb_long = NextDX();
+	
+	dxMap.msd_bsf = dxMap.msd_long;
+	dxMap.msr_bsf = dxMap.msr_long;
+	dxMap.msu_bsf = dxMap.msu_long;
+	dxMap.msl_bsf = dxMap.msl_long;
+	
+	dxMap.msd_bsb = NextDX();
+	dxMap.msr_bsb = NextDX();
+	dxMap.msu_bsb = NextDX();
+	dxMap.msl_bsb = NextDX();
+	
+	dxMap.chf_bsf = dxMap.chf_long;
+	dxMap.chf_bsb = NextDX();
+	dxMap.chb_bsf = dxMap.chb_long;
+	dxMap.chb_bsb = NextDX();
+	
+	dxMap.ldgh = NextDX();
+	dxMap.ldgh_long = NextDX();
+	
+	dxMap.apeng = NextDX();
+	dxMap.apeng_long = NextDX();
+	
+	//-------------------------
+	// shift buttons
+	//-------------------------
+	dxMap.tg1_shift = NextDX();
+	dxMap.s1_shift = NextDX();
+	dxMap.s2_shift = NextDX();
+	dxMap.tg2_shift = NextDX();
+	
+	if(!LONG_PRESS_CH) {
+		dxMap.chf_long = 0;
+		dxMap.chb_long = 0;
+		dxMap.chf_bsf_long = 0;
+		dxMap.chf_bsb_long = 0;
+	}
+	if(!LONG_PRESS_MS) {
+		dxMap.msu_long = 0;
+		dxMap.msd_long = 0;
+		dxMap.msr_long = 0;
+		dxMap.msl_long = 0;
+		dxMap.msp_long = 0;
+	}
+	if(!LONG_PRESS_SPDB) dxMap.spdb_long = 0;
+	if(!LONG_PRESS_HAT2) {
+		dxMap.h2u_long = 0;	
+		dxMap.h2d_long = 0;	
+		dxMap.h2r_long = 0;	
+		dxMap.h2l_long = 0;	
+	}
+	if(!LONG_PRESS_HAT3) {
+		dxMap.h3u_long = 0;	
+		dxMap.h3d_long = 0;	
+		dxMap.h3r_long = 0;	
+		dxMap.h3l_long = 0;	
+	}
+	if(!LONG_PRESS_HAT4) {
+		dxMap.h4u_long = 0;	
+		dxMap.h4d_long = 0;	
+		dxMap.h4r_long = 0;	
+		dxMap.h4l_long = 0;	
+		dxMap.h4p_long = 0;
+	}
+	if(!LONG_PRESS_LDGH) dxMap.ldgh_long = 0;
+	if(!LONG_PRESS_APENG) dxMap.apeng_long = 0;
+}
+
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+// Returns the next available DX button number and advances the counter.
+// Prints a warning and stops incrementing once DX_MAX is reached.
+int NextDX(){
+    int val;
+    if(dxNext >= DX_MAX) {
+        printf("WARNING: DX button limit (%d) exceeded!\x0a", DX_MAX);
+        return DX120;
+    }
+    val = dxNext;
+    dxNext = dxNext + 1;
+    return val + DX1;
+}	
+
+int autopilot(){
+	if(Throttle[APPAT]) ActKey(dxMap.apeng_pat);
+	else if(Throttle[APAH]) ActKey(dxMap.apeng_heading);
+	else if(Throttle[APALT] & Throttle[RDRDIS]) ActKey(dxMap.apeng_left);
+	else if(Throttle[APALT] & Throttle[RDRNRM]) ActKey(dxMap.apeng_right);
+}
+
+int setPinky(int mode) {
+	if(mode == 0) {
+		MapKeyTempo(&Throttle, LTB, dxMap.ltb_psf, dxMap.ltb_psf_long);
+	} else if(mode == 1) {
+		MapKeyTempo(&Throttle, LTB, dxMap.ltb_psm, dxMap.ltb_psm_long);
+	} else if(modex == 2) {
+		MapKeyTempo(&Throttle, LTB, dxMap.ltb_psb, dxMap.ltb_psb_long);
+	}
+}
+
+int MapKeyTempo(alias device, int source, int short_press, int long_press) {
+	if(long_press != 0 & LONG_PRESS_FUNCTIONS)
+		MapKey(&device, source, TEMPO(short_press, long_press, LONG_PRESS_DURATION));
+	else
+		MapKey(&device, source, short_press);
+}
+
+// ============================================================================
+// MAIN
+// ============================================================================
+int main()
+{
+    initDXMap(); // Assign DX
+
+    // Exclude default device handling so we can combine them
+    Configure(&HCougar, MODE_EXCLUDED);
+    Configure(&T16000, MODE_EXCLUDED);
+    Configure(&T16000L, MODE_EXCLUDED);
+    Configure(&TWCSThrottle, MODE_EXCLUDED);
+    Configure(&LMFD, MODE_EXCLUDED);
+    Configure(&RMFD, MODE_EXCLUDED);
+
+    // -----------------------------------------------------------------------
+    // Create combined virtual device from Joystick + Throttle
+    // This merges both into a single DirectX device with up to 128 buttons
+    // -----------------------------------------------------------------------
+    virtualj.ButtonsNumber = DX_MAX;
+
+    if(Init(&EventHandle)) return 1;
+
+    SetKBRate(32, 50);          // Key repeat: initial delay, repeat rate (ms)
+    SetKBLayout(KB_ENG);        // Keyboard layout
+
+    // Set shift button (enables IO shift layers on all MapKeyIO calls)
+    if(BOAT_SWITCH_MACRO)
+    	SetShiftButton(&Joystick, SHIFT_BTN, &Throttle, BSF, BSB);
+    else
+		SetShiftButton(&Joystick, SHIFT_BTN, &Throttle, 0, 0);
+    // -----------------------------------------------------------------------
+    // JOYSTICK - BUTTONS
+    // -----------------------------------------------------------------------
+
+    // Trigger - Stage 1 and Stage 2
+    if(SHIFT_BUTTONS) {
+    	MapKeyIO(&Joystick, TG1, dxMap.tg1_shift, dxMap.tg1);
+    	MapKeyIO(&Joystick, TG2, dxMap.tg2_shift, dxMap.tg2);
+    	MapKeyIO(&Joystick, S1, dxMap.s1_shift,  dxMap.s1);
+		MapKeyIO(&Joystick, S2, dxMap.s2_shift, dxMap.s2);
+	} else {
+		MapKey(&Joystick, TG1, dxMap.tg1);
+    	MapKey(&Joystick, TG2, dxMap.tg2);
+    	MapKey(&Joystick, S1, dxMap.s1);
+		MapKey(&Joystick, S2, dxMap.s2);
+	}
+    MapKey(&Joystick, S3, dxMap.s3);
+    MapKey(&Joystick, S4, dxMap.s4);
+
+    // TMS Hat (Thumb)
+    MapKeyTempo(&Joystick, H2U, dxMap.h2u, dxMap.h2u_long);
+    MapKeyTempo(&Joystick, H2D, dxMap.h2d, dxMap.h2d_long);
+    MapKeyTempo(&Joystick, H2L, dxMap.h2l, dxMap.h2l_long);
+    MapKeyTempo(&Joystick, H2R, dxMap.h2r, dxMap.h2r_long);
+
+    // DMS Hat (Index finger)
+    MapKeyTempo(&Joystick, H3U, dxMap.h3u, dxMap.h3u_long);
+    MapKeyTempo(&Joystick, H3D, dxMap.h3d, dxMap.h3d_long);
+    MapKeyTempo(&Joystick, H3L, dxMap.h3l, dxMap.h3l_long);
+    MapKeyTempo(&Joystick, H3R, dxMap.h3r, dxMap.h3r_long);
+
+    // CMS Hat (Ring finger)
+    MapKeyTempo(&Joystick, H4U, dxMap.h4u, dxMap.h4u_long);
+    MapKeyTempo(&Joystick, H4D, dxMap.h4d, dxMap.h4d_long);
+    MapKeyTempo(&Joystick, H4L, dxMap.h4l, dxMap.h4l_long);
+    MapKeyTempo(&Joystick, H4R, dxMap.h4r, dxMap.h4r_long);
+    MapKeyTempo(&Joystick, H4P, dxMap.h4p, dxMap.h4p_long);
+
+    // Trim Hat (POV / Coolie Hat)
+    MapKey(&Joystick, H1U, DXHATUP);
+    MapKey(&Joystick, H1D, DXHATDOWN);
+    MapKey(&Joystick, H1L, DXHATLEFT);
+    MapKey(&Joystick, H1R, DXHATRIGHT);
+    
+    // -----------------------------------------------------------------------
+    // THROTTLE - BUTTONS
+    // -----------------------------------------------------------------------
+
+    // Mic Switch
+    if(BOAT_SWITCH_MS) {
+    	MapKeyUMD(&Throttle, MSU, dxMap.msu_bsf, dxMap.msu, dxMap.msu_bsb);
+	    MapKeyUMD(&Throttle, MSD, dxMap.msd_bsf, dxMap.msd, dxMap.msd_bsb);
+    	MapKeyUMD(&Throttle, MSL, dxMap.msl_bsf, dxMap.msl, dxMap.msl_bsb);
+	    MapKeyUMD(&Throttle, MSR, dxMap.msr_bsf, dxMap.msr, dxMap.msr_bsb);
+    } else {
+    	MapKeyTempo(&Throttle, MSU, dxMap.msu, dxMap.msu_long);
+	    MapKeyTempo(&Throttle, MSD, dxMap.msd, dxMap.msd_long);
+    	MapKeyTempo(&Throttle, MSL, dxMap.msl, dxMap.msl_long);
+	    MapKeyTempo(&Throttle, MSR, dxMap.msr, dxMap.msr_long);
+	}
+    MapKeyTempo(&Throttle, MSP, dxMap.msp, dxMap.msp_long);
+
+    // Speedbrake (toggle - pulse on activation)
+    MapKey(&Throttle, SPDF, dxMap.spdf);
+    MapKey(&Throttle, SPDM, dxMap.spdm);
+    MapKey(&Throttle, SPDB, dxMap.spdb);
+
+    // Boat Switch (toggle - pulse on activation)
+    MapKey(&Throttle, BSF, dxMap.bsf);
+    MapKey(&Throttle, BSM, dxMap.bsm);
+    MapKey(&Throttle, BSB, dxMap.bsb);
+
+    // China Hat (toggle - pulse on activation)
+    if(BOAT_SWITCH_MACRO) {
+    	MapKeyUMD(&Throttle, CHF, dxMap.chf_bsf, dxMap.chf, dxMap.chf_bsb);
+    	MapKeyUMD(&Throttle, CHB, dxMap.chb_bsf, dxMap.chb, dxMap.chb_bsb);
+    } else {
+    	MapKeyTempo(&Throttle, CHF, dxMap.chf, dxMap.chf_long);
+    	MapKeyTempo(&Throttle, CHB, dxMap.chb, dxMap.chb_long);
+    }
+
+    // Pinky Switch (toggle - pulse on activation)
+    MapKey(&Throttle, PSF, CHAIN(dxMap.psf, EXEC("setPinky(0);")));
+    MapKey(&Throttle, PSM, CHAIN(dxMap.psm, EXEC("setPinky(1);")));
+    MapKey(&Throttle, PSB, CHAIN(dxMap.psb, EXEC("setPinky(2);")));
+
+    // Coolie Hat (Throttle)
+    MapKey(&Throttle, CSU, dxMap.csu);
+    MapKey(&Throttle, CSD, dxMap.csd);
+    MapKey(&Throttle, CSL, dxMap.csl);
+    MapKey(&Throttle, CSR, dxMap.csr);
+
+	// Flaps (toggle - pulse on activation)
+	MapKey(&Throttle, FLAPU, dxMap.flapu);
+	MapKey(&Throttle, FLAPM, dxMap.flapm);
+	MapKey(&Throttle, FLAPD, dxMap.flapd);
+	
+    // Autopilot Switches (toggle - pulse on activation)
+	MapKey(&Throttle, APPAT, dxMap.appat);
+	MapKey(&Throttle, APAH,  dxMap.apah);
+	MapKey(&Throttle, APALT, dxMap.apalt);
+	MapKey(&Throttle, RDRNRM, dxMap.rdrnrm);
+	MapKey(&Throttle, RDRDIS, dxMap.rdrdis);
+	
+    if(AUTOPILOT_MACRO) {
+    	MapKeyTempo(&Throttle, APENG, EXEC("autopilot();"), dxMap.apeng_long);
+    } else {
+    	MapKeyTempo(&Throttle, APENG, dxMap.apeng, dxMap.apeng_long);
+    }
+    
+	//if(PINKY_MACRO) {
+	//	MapKey(&Throttle, LTB, TEMPO(EXEC("pinkyShort();"), EXEC("pinkyLong();"), LONG_PRESS_DURATION));
+	//} else {
+	//   // Left Throttle Button
+    //	MapKeyTempo(&Throttle, LTB, dxMap.ltb, dxMap.ltb_long);
+	//}
+
+    // Engine Operate (Left/Right) (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, EOLIGN, dxMap.eolign);
+	    MapKey(&Throttle, EOLNORM,  dxMap.eolnorm);
+    	MapKey(&Throttle, EOLMOTOR, dxMap.eolmotor);
+    	MapKey(&Throttle, EORIGN, dxMap.eorign);
+    	MapKey(&Throttle, EORNORM,  dxMap.eornorm);
+    	MapKey(&Throttle, EORMOTOR, dxMap.eormotor);
+    } else {
+    	MapKey(&Throttle, EOLIGN,   dxMap.eolign);
+	    MapKey(&Throttle, EOLNORM,  dxMap.eolmotor);
+    	MapKey(&Throttle, EOLMOTOR, dxMap.eolmotor);
+    	
+    	MapKey(&Throttle, EORIGN,   dxMap.eorign);
+    	MapKey(&Throttle, EORNORM,  dxMap.eormotor);
+    	MapKey(&Throttle, EORMOTOR, dxMap.eormotor);
+    }
+
+    // Engine Fuel Flow (Left/Right) (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, EFRNORM, dxMap.efrnorm);
+    	MapKey(&Throttle, EFROVER, dxMap.efrover);
+    	MapKey(&Throttle, EFLNORM, dxMap.eflnorm);
+    	MapKey(&Throttle, EFLOVER, dxMap.eflover);
+    } else {
+    	MapKey(&Throttle, EFRNORM, dxMap.efrover);
+    	MapKey(&Throttle, EFROVER, dxMap.efrover);
+
+    	MapKey(&Throttle, EFLNORM, dxMap.eflover);
+    	MapKey(&Throttle, EFLOVER, dxMap.eflover);
+    }
+
+    // Landing Gear Horn (toggle - pulse on activation)
+    MapKeyTempo(&Throttle, LDGH, dxMap.ldgh, dxMap.ldgh_long);
+
+    // APU (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, APUON,  dxMap.apuon);
+	    MapKey(&Throttle, APUOFF, dxMap.apuoff);
+    } else {
+    	MapKey(&Throttle, APUON,  dxMap.apuon);
+    	MapKey(&Throttle, APUOFF, dxMap.apuon);
+	}
+	
+	// EAC (toggle - pulse on activation)
+	if(MUTLI_FUNCTION_TOGGLES) {
+		MapKey(&Throttle, EACON, dxMap.eacon);
+		MapKey(&Throttle, EACOFF, dxMap.eacoff);
+	} else {
+		MapKey(&Throttle, EACON, dxMap.eacon);
+		MapKey(&Throttle, EACOFF, dxMap.eacoff);
+	}
+
+
+    // Idle Detent (toggle - pulse on activation)
+    if(MUTLI_FUNCTION_TOGGLES) {
+    	MapKey(&Throttle, IDLERON,  dxMap.idleron);
+	    MapKey(&Throttle, IDLELON,  dxMap.idlelon);
+	    MapKey(&Throttle, IDLEROFF, dxMap.idleroff); 
+    	MapKey(&Throttle, IDLELOFF, dxMap.idleloff);
+	} else {
+		MapKey(&Throttle, IDLERON, dxMap.idleron);
+		MapKey(&Throttle, IDLEROFF, dxMap.idleron);
+		MapKey(&Throttle, IDLELON, dxMap.idlelon);
+		MapKey(&Throttle, IDLELOFF, dxMap.idlelon);
+	}
+
+    // -----------------------------------------------------------------------
+    // AXES
+    // -----------------------------------------------------------------------
+
+    // Joystick axes (direct mapping, no curves by default)
+    MapAxis(&Joystick, JOYX, DX_X_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+    MapAxis(&Joystick, JOYY, DX_Y_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+
+    // Throttle axes
+    MapAxis(&Throttle, THR_RIGHT, DX_Z_AXIS,    AXIS_NORMAL, MAP_ABSOLUTE);
+    MapAxis(&Throttle, THR_LEFT,  DX_ZROT_AXIS,  AXIS_NORMAL, MAP_ABSOLUTE);
+    MapAxis(&Throttle, THR_FC,    DX_SLIDER_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);  // Friction control
+
+    // Slew Control as axes
+    if(SLEW_IS_MOUSE) {
+    	// Slew Control Push
+   		MapKeyTempo(&Throttle, SC,  MOUSE_LEFT, ESC);
+    	MapAxis(&Throttle, SCX, MOUSE_X_AXIS, AXIS_NORMAL, MAP_RELATIVE);
+    	MapAxis(&Throttle, SCY, MOUSE_Y_AXIS, AXIS_NORMAL, MAP_RELATIVE);
+    	SetSCurve(&Throttle, SCX, 0, 0, 0, 3, -10); 
+    	SetSCurve(&Throttle, SCY, 0, 0, 0, 3, -10); 
+    } else {
+    	// Slew Control Push
+    	MapKeyTempo(&Throttle, SC,  dxMap.sc, dxMap.sc_long);
+    	MapAxis(&Throttle, SCX, DX_XROT_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+    	MapAxis(&Throttle, SCY, DX_YROT_AXIS, AXIS_NORMAL, MAP_ABSOLUTE);
+    }
+
+    // -----------------------------------------------------------------------
+    // AXIS CURVES (optional - uncomment and adjust as needed)
+    // -----------------------------------------------------------------------
+    // SetSCurve(&Joystick, JOYX, 0, 0, 0, 0, 0);   // left DZ, center DZ, right DZ, curve, zoom
+    // SetSCurve(&Joystick, JOYY, 0, 0, 0, 0, 0);
+    // SetSCurve(&Throttle, THR_RIGHT, 0, 0, 0, 0, 0);
+    // SetSCurve(&Throttle, THR_LEFT, 0, 0, 0, 0, 0);
+
+    // -----------------------------------------------------------------------
+    // SHIFTED LAYERS (example - uses SHIFT_BTN defined above)
+    // Replace DX mappings above with MapKeyIO for shifted layers:
+    //
+    //   MapKeyIO(&Joystick, TG1,
+    //       NextDX(),   // Shifted (S4 held) + Trigger
+    //       NextDX());  // Unshifted Trigger
+    //
+    // This lets you double your button count using the shift modifier.
+    // -----------------------------------------------------------------------
+
+    printf("Warthog Combined Profile loaded.\x0a");
+    printf("Joystick + Throttle merged into single virtual device.\x0a");
+    printf("Shift button: S4 (Pinky Lever)\x0a");
+    printf("DX buttons assigned: %d / %d\x0a", dxNext, DX_MAX);
+}
+
+// ============================================================================
+// EVENT HANDLER
+// ============================================================================
+int EventHandle(int type, alias o, int x)
+{
+    DefaultMapping(&o, x);
+}
+// ============================================================================
+// Thrustmaster Warthog Combined HOTAS Profile
 // Combines Joystick + Throttle into a single virtual device (up to 120 DX buttons)
 // ============================================================================
 // Usage: Run this script in T.A.R.G.E.T. Script Editor
